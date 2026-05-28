@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
-import { RotateCcw, FastForward, Edit3, Trash2, Home, CheckCircle2, Code, X, Dices, Settings2, PlayCircle, Hammer, PanelLeft, PanelRight, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
+import { RotateCcw, FastForward, Edit3, Trash2, Home, CheckCircle2, Code, X, Dices, Settings2, PlayCircle, Hammer, PanelLeft, PanelRight, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NavLink } from 'react-router-dom';
 import { getInitialState } from './data';
@@ -54,8 +54,9 @@ export default function App({ mode }: AppProps) {
   const [inputText, setInputText] = useState(JSON.stringify(treeData, null, 2));
   const [inputError, setInputError] = useState<string | null>(null);
 
-  const [isLeftOpen, setIsLeftOpen] = useState(true);
-  const [isRightOpen, setIsRightOpen] = useState(true);
+  const [isLeftOpen, setIsLeftOpen] = useState(false);
+  const [isRightOpen, setIsRightOpen] = useState(false);
+  const [isFooterOpen, setIsFooterOpen] = useState(false);
 
   const isEditorMode = mode === 'editor';
 
@@ -722,42 +723,61 @@ export default function App({ mode }: AppProps) {
            )}
         </main>
 
-        <footer className="h-32 bg-[#111827] border-t border-[#1E293B] p-3 flex gap-4 z-20 shrink-0">
-          <div className="flex-1 bg-[#1E293B]/50 rounded-lg p-2 border border-[#334155] flex flex-col relative overflow-hidden">
-            <div className="flex justify-between items-center mb-1 z-10 shrink-0">
-               <h3 className="text-[10px] font-bold text-emerald-400 uppercase">Trạng thái Duyệt</h3>
-               {isStepMode && (
-                  <div className="text-[9px] text-slate-400 font-medium bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
-                     Phím <span className="font-bold text-slate-200">←</span> / <span className="font-bold text-slate-200">→</span>
-                  </div>
-               )}
+        <motion.footer 
+          initial={false}
+          animate={{ height: isFooterOpen ? 128 : 40 }}
+          className="bg-[#111827] border-t border-[#1E293B] z-20 shrink-0 flex flex-col overflow-hidden"
+        >
+          <div 
+            onClick={() => setIsFooterOpen(!isFooterOpen)}
+            className="h-10 px-4 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition-colors shrink-0"
+          >
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isStepMode ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+              <h3 className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Trạng thái Duyệt</h3>
             </div>
-            <div className="space-y-0.5 overflow-y-auto flex-1 font-mono text-[10px] scroll-smooth pr-1" ref={el => {
-               if (el) el.scrollTop = el.scrollHeight;
-            }}>
-              {logs.length === 0 && <div className="text-slate-500 italic mt-1 text-[10px]">
-                  {isEditorMode ? "Chế độ chỉnh sửa: Bấm (+) để thêm nút con hoặc nhập giá trị để tạo nút lá." : "Sử dụng Sidebar bên phải để chạy thuật toán."}
-              </div>}
-              {logs.map((log, i) => (
-                 <div key={log.id} className="flex gap-2 leading-tight">
-                   <span className="text-slate-500 w-5 shrink-0">[{i + 1}]</span>
-                   <span className={`${log.message.includes('Cắt tỉa') ? 'text-rose-400 font-bold' : log.message.includes('cập nhật') ? 'text-emerald-300' : 'text-slate-300'}`}>
-                      {log.message}
-                   </span>
-                 </div>
-              ))}
+            <div className="text-slate-500">
+              {isFooterOpen ? <ChevronDown size={16}/> : <ChevronUp size={16}/>}
             </div>
           </div>
-          <div className="w-56 flex flex-col gap-2">
-            <div className="bg-rose-500/10 border border-rose-500/20 p-2 rounded">
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
-                <span className="text-[9px] font-bold text-rose-300 uppercase">Cắt tỉa</span>
+
+          <div className="flex-1 p-3 pt-0 flex gap-4 min-h-0">
+            <div className="flex-1 bg-[#1E293B]/50 rounded-lg p-2 border border-[#334155] flex flex-col relative overflow-hidden">
+              <div className="flex justify-between items-center mb-1 z-10 shrink-0">
+                 <h3 className="text-[10px] font-bold text-emerald-400 uppercase">Nhật ký thuật toán</h3>
+                 {isStepMode && (
+                    <div className="text-[9px] text-slate-400 font-medium bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
+                       Phím <span className="font-bold text-slate-200">←</span> / <span className="font-bold text-slate-200">→</span>
+                    </div>
+                 )}
               </div>
-              <p className="text-[9px] text-rose-200/60 leading-tight mt-1">Nếu α ≥ β, các nhánh còn lại bên phải sẽ không cần xét.</p>
+              <div className="space-y-0.5 overflow-y-auto flex-1 font-mono text-[10px] scroll-smooth pr-1" ref={el => {
+                 if (el) el.scrollTop = el.scrollHeight;
+              }}>
+                {logs.length === 0 && <div className="text-slate-500 italic mt-1 text-[10px]">
+                    {isEditorMode ? "Chế độ chỉnh sửa: Bấm (+) để thêm nút con hoặc nhập giá trị để tạo nút lá." : "Sử dụng Sidebar bên phải để chạy thuật toán."}
+                </div>}
+                {logs.map((log, i) => (
+                   <div key={log.id} className="flex gap-2 leading-tight">
+                     <span className="text-slate-500 w-5 shrink-0">[{i + 1}]</span>
+                     <span className={`${log.message.includes('Cắt tỉa') ? 'text-rose-400 font-bold' : log.message.includes('cập nhật') ? 'text-emerald-300' : 'text-slate-300'}`}>
+                        {log.message}
+                     </span>
+                   </div>
+                ))}
+              </div>
+            </div>
+            <div className="w-56 flex flex-col gap-2 shrink-0">
+              <div className="bg-rose-500/10 border border-rose-500/20 p-2 rounded">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                  <span className="text-[9px] font-bold text-rose-300 uppercase">Cắt tỉa</span>
+                </div>
+                <p className="text-[9px] text-rose-200/60 leading-tight mt-1">Nếu α ≥ β, các nhánh còn lại bên phải sẽ không cần xét.</p>
+              </div>
             </div>
           </div>
-        </footer>
+        </motion.footer>
       </div>
 
       {/* Right Sidebar */}
