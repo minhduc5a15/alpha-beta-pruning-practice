@@ -145,7 +145,7 @@ export default function App({ mode }: AppProps) {
       // Practice mode navigation
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      const keys = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'];
+      const keys = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Delete'];
       if (keys.includes(e.key)) {
         e.preventDefault();
         if (!activeNodeId) {
@@ -165,13 +165,24 @@ export default function App({ mode }: AppProps) {
         } else if (e.key === 'ArrowDown') {
           const childId = firstChildMap[activeNodeId];
           if (childId) setActiveNodeId(childId);
+        } else if (e.key === 'Delete') {
+          const currentState = userStates[activeNodeId];
+          if (currentState) {
+            setUserStates(prev => ({
+              ...prev,
+              [activeNodeId]: {
+                ...currentState,
+                isPruned: !currentState.isPruned
+              }
+            }));
+          }
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isStepMode, steps.length, activeNodeId, nodeIds, parentMap, firstChildMap, nextSiblingMap, prevSiblingMap]);
+  }, [isStepMode, steps.length, activeNodeId, nodeIds, parentMap, firstChildMap, nextSiblingMap, prevSiblingMap, userStates]);
 
   useEffect(() => {
     if (!isStepMode) return;
