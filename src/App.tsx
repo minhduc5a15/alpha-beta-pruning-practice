@@ -29,9 +29,32 @@ export default function App({ mode }: AppProps) {
     setRandomConfig 
   } = useTreeStore();
 
-  const [userStates, setUserStates] = useState<Record<string, NodeState>>(getInitialState(treeData));
+  const [userStates, setUserStates] = useState<Record<string, NodeState>>(() => {
+    const saved = localStorage.getItem('alpha-beta-user-states');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return getInitialState(treeData);
+      }
+    }
+    return getInitialState(treeData);
+  });
+
+  useEffect(() => {
+    localStorage.setItem('alpha-beta-user-states', JSON.stringify(userStates));
+  }, [userStates]);
+
   const [truthData, setTruthData] = useState<Record<string, TruthRecord>>(calculateTruthData(treeData));
-  const [showResults, setShowResults] = useState(false);
+  const [showResults, setShowResults] = useState(() => {
+    const saved = localStorage.getItem('alpha-beta-show-results');
+    return saved === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('alpha-beta-show-results', showResults.toString());
+  }, [showResults]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [lines, setLines] = useState<{x1:number, y1:number, x2:number, y2:number, pruned:boolean}[]>([]);
@@ -101,9 +124,23 @@ export default function App({ mode }: AppProps) {
   };
 
   useEffect(() => {
-    setUserStates(getInitialState(treeData));
+    setUserStates(prev => {
+      const initialState = getInitialState(treeData);
+      const merged: Record<string, NodeState> = {};
+      
+      // Keep existing node states if they still exist in the new tree
+      Object.keys(initialState).forEach(id => {
+        if (prev[id]) {
+          merged[id] = prev[id];
+        } else {
+          merged[id] = initialState[id];
+        }
+      });
+      return merged;
+    });
     setTruthData(calculateTruthData(treeData));
-    setShowResults(false);
+    // Don't auto-reset showResults or other practicing states here 
+    // to allow persistent practice across manual tree edits.
     setIsStepMode(false);
     setSteps([]);
     setCurrentStepIndex(-1);
@@ -601,54 +638,80 @@ export default function App({ mode }: AppProps) {
               </div>
            </div>
 
-           {/* Floating Canvas Controls */}
-           <div className="absolute bottom-6 right-6 z-40 flex flex-col gap-2">
-              <div className="bg-[#1E293B]/80 backdrop-blur-md border border-[#334155] rounded-lg p-1 shadow-2xl flex flex-col">
-                 <button onClick={() => setTransform(p => ({...p, scale: Math.min(3, p.scale + 0.1)}))} className="p-2 hover:bg-slate-700 rounded text-slate-300 transition-colors cursor-pointer" title="Phóng to (Cuộn chuột)"><ZoomIn size={18}/></button>
-                 <button onClick={() => setTransform(p => ({...p, scale: Math.max(0.1, p.scale - 0.1)}))} className="p-2 hover:bg-slate-700 rounded text-slate-300 transition-colors cursor-pointer" title="Thu nhỏ (Cuộn chuột)"><ZoomOut size={18}/></button>
-                 <div className="h-px bg-[#334155] mx-1 my-1"></div>
-                 <button onClick={resetView} className="p-2 hover:bg-slate-700 rounded text-slate-300 transition-colors cursor-pointer" title="Căn giữa"><Maximize size={18}/></button>
-              </div>
-           </div>
-
            {/* Modals remain here... */}
            {isRandomConfigOpen && (
               <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                  <div className="bg-[#1E293B] border border-[#334155] rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
                     <div className="p-4 border-b border-[#334155] flex justify-between items-center bg-[#111827]">
                        <h2 className="font-bold text-slate-100 uppercase text-xs tracking-wider">Cấu hình Random</h2>
-                       <button onClick={() => setIsRandomConfigOpen(false)} className="text-slate-400 hover:text-white">
+                       <button onClick={() => setIsRandomConfigOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
                           <X size={16} />
                        </button>
                     </div>
                     <div className="p-6 space-y-6">
-                       <div className="space-y-3">
-                          <div className="flex justify-between">
-                             <label className="text-[10px] font-bold text-slate-400 uppercase">Độ sâu tối đa: {randomConfig.maxDepth}</label>
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-bold text-slate-400 uppercase">Độ sâu: {randomConfig.maxDepth}</label>
+                             <input 
+                                type="range" min="1" max="5" step="1" 
+                                value={randomConfig.maxDepth}
+                                onChange={(e) => setRandomConfig({...randomConfig, maxDepth: parseInt(e.target.value)})}
+                                className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                             />
                           </div>
-                          <input 
-                             type="range" min="1" max="5" step="1" 
-                             value={randomConfig.maxDepth}
-                             onChange={(e) => setRandomConfig({...randomConfig, maxDepth: parseInt(e.target.value)})}
-                             className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                          />
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-bold text-slate-400 uppercase">Độ rộng: {randomConfig.maxBreadth}</label>
+                             <input 
+                                type="range" min="2" max="5" step="1" 
+                                value={randomConfig.maxBreadth}
+                                onChange={(e) => setRandomConfig({...randomConfig, maxBreadth: parseInt(e.target.value)})}
+                                className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                             />
+                          </div>
                        </div>
+
                        <div className="space-y-3">
-                          <div className="flex justify-between">
-                             <label className="text-[10px] font-bold text-slate-400 uppercase">Độ rộng tối đa: {randomConfig.maxBreadth}</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Phạm vi giá trị: {randomConfig.minValue} → {randomConfig.maxValue}</label>
+                          <div className="flex items-center gap-4">
+                             <input 
+                                type="number" 
+                                value={randomConfig.minValue}
+                                onChange={(e) => setRandomConfig({...randomConfig, minValue: parseInt(e.target.value)})}
+                                className="w-full bg-[#111827] border border-[#334155] rounded px-2 py-1 text-xs text-emerald-400 outline-none focus:border-emerald-500"
+                             />
+                             <span className="text-slate-500">đến</span>
+                             <input 
+                                type="number" 
+                                value={randomConfig.maxValue}
+                                onChange={(e) => setRandomConfig({...randomConfig, maxValue: parseInt(e.target.value)})}
+                                className="w-full bg-[#111827] border border-[#334155] rounded px-2 py-1 text-xs text-emerald-400 outline-none focus:border-emerald-500"
+                             />
                           </div>
-                          <input 
-                             type="range" min="2" max="5" step="1" 
-                             value={randomConfig.maxBreadth}
-                             onChange={(e) => setRandomConfig({...randomConfig, maxBreadth: parseInt(e.target.value)})}
-                             className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                          />
+                       </div>
+
+                       <div className="space-y-3">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Loại nút gốc</label>
+                          <div className="flex gap-2">
+                             {(['MAX', 'MIN', 'RANDOM'] as const).map(type => (
+                                <button
+                                   key={type}
+                                   onClick={() => setRandomConfig({...randomConfig, rootType: type})}
+                                   className={`flex-1 py-1.5 rounded text-[10px] font-bold transition-all cursor-pointer border ${
+                                      randomConfig.rootType === type 
+                                      ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400' 
+                                      : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-slate-300'
+                                   }`}
+                                >
+                                   {type}
+                                </button>
+                             ))}
+                          </div>
                        </div>
                     </div>
                     <div className="p-3 bg-[#111827] flex justify-end">
                        <button 
                           onClick={() => { generateRandomTree(); setIsRandomConfigOpen(false); }}
-                          className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold flex items-center gap-2"
+                          className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-900/20"
                        >
                           <Dices size={12}/> TẠO CÂY MỚI
                        </button>
@@ -844,13 +907,19 @@ export default function App({ mode }: AppProps) {
                         </button>
 
                         <button 
-                            onClick={() => { setIsStepMode(false); setShowResults(true); setTimeout(drawLines, 50); }}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 transition-all cursor-pointer"
+                            onClick={() => { setIsStepMode(false); setShowResults(!showResults); setTimeout(drawLines, 50); }}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all cursor-pointer shadow-lg ${
+                                showResults 
+                                ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/20' 
+                                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'
+                            }`}
                         >
-                            <CheckCircle2 size={20} className="shrink-0"/>
+                            {showResults ? <X size={20} className="shrink-0"/> : <CheckCircle2 size={20} className="shrink-0"/>}
                             <AnimatePresence>
                                {isRightOpen && (
-                                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-bold uppercase tracking-wider whitespace-nowrap">Kiểm tra</motion.span>
+                                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-bold uppercase tracking-wider whitespace-nowrap">
+                                    {showResults ? 'Tắt kiểm tra' : 'Kiểm tra'}
+                                  </motion.span>
                                )}
                             </AnimatePresence>
                         </button>

@@ -3,6 +3,14 @@ import { persist } from 'zustand/middleware';
 import { TreeNodeData } from './types';
 import { INITIAL_TREE_DATA } from './data';
 
+export interface RandomConfig {
+  maxDepth: number;
+  maxBreadth: number;
+  minValue: number;
+  maxValue: number;
+  rootType: 'MAX' | 'MIN' | 'RANDOM';
+}
+
 interface TreeStore {
   treeData: TreeNodeData;
   isEditorMode: boolean;
@@ -13,9 +21,9 @@ interface TreeStore {
   addChild: (parentId: string) => void;
   removeChild: (parentId: string, childId: string) => void;
   clearTree: () => void;
-  generateRandomTree: (config?: { maxDepth: number, maxBreadth: number }) => void;
-  randomConfig: { maxDepth: number, maxBreadth: number };
-  setRandomConfig: (config: { maxDepth: number, maxBreadth: number }) => void;
+  generateRandomTree: (config?: RandomConfig) => void;
+  randomConfig: RandomConfig;
+  setRandomConfig: (config: RandomConfig) => void;
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9).toUpperCase();
@@ -25,7 +33,13 @@ export const useTreeStore = create<TreeStore>()(
     (set, get) => ({
       treeData: INITIAL_TREE_DATA,
       isEditorMode: false,
-      randomConfig: { maxDepth: 3, maxBreadth: 3 },
+      randomConfig: { 
+        maxDepth: 3, 
+        maxBreadth: 3,
+        minValue: 1,
+        maxValue: 20,
+        rootType: 'MAX'
+      },
       setRandomConfig: (config) => set({ randomConfig: config }),
       setTreeData: (tree) => set({ treeData: tree }),
       setEditorMode: (isEditor) => set({ isEditorMode: isEditor }),
@@ -35,16 +49,17 @@ export const useTreeStore = create<TreeStore>()(
         isEditorMode: true 
       }),
       generateRandomTree: (config) => set(() => {
-        const { maxDepth, maxBreadth } = config || get().randomConfig;
+        const { maxDepth, maxBreadth, minValue, maxValue, rootType } = config || get().randomConfig;
         
         const createRandomNode = (id: string, type: 'MAX' | 'MIN' | 'LEAF', depth: number): TreeNodeData => {
           const shouldBeLeaf = depth >= maxDepth || (depth >= 1 && Math.random() < 0.1);
           
           if (shouldBeLeaf) {
+            const range = maxValue - minValue + 1;
             return {
               id,
               type: 'LEAF',
-              value: Math.floor(Math.random() * 20) + 1,
+              value: Math.floor(Math.random() * range) + minValue,
             };
           }
           const childCount = Math.floor(Math.random() * (maxBreadth - 1)) + 2; 
@@ -55,7 +70,12 @@ export const useTreeStore = create<TreeStore>()(
           }
           return { id, type, children };
         };
-        return { treeData: createRandomNode('A', 'MAX', 0), isEditorMode: false };
+
+        let startType: 'MAX' | 'MIN' = 'MAX';
+        if (rootType === 'MIN') startType = 'MIN';
+        else if (rootType === 'RANDOM') startType = Math.random() < 0.5 ? 'MAX' : 'MIN';
+
+        return { treeData: createRandomNode('A', startType, 0), isEditorMode: false };
       }),
       updateNode: (id, updates) => set((state) => {
         const updateRecursive = (node: TreeNodeData): TreeNodeData => {
