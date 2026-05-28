@@ -788,7 +788,7 @@ export default function App({ mode }: AppProps) {
 
         <motion.footer 
           initial={false}
-          animate={{ height: isFooterOpen ? 128 : 40 }}
+          animate={{ height: isFooterOpen ? 200 : 40 }}
           className="bg-[#111827] border-t border-[#1E293B] z-20 shrink-0 flex flex-col overflow-hidden"
         >
           <div 
