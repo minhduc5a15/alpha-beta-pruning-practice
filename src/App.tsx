@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
-import { RotateCcw, FastForward, Edit3, Trash2, Home, CheckCircle2, Code, X, Dices, Settings2, PlayCircle, Hammer, PanelLeft, PanelRight, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, ChevronUp, ChevronDown } from 'lucide-react';
+import { RotateCcw, FastForward, Edit3, Trash2, Home, CheckCircle2, Code, X, Dices, Settings2, PlayCircle, Hammer, PanelLeft, PanelRight, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, ChevronUp, ChevronDown, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NavLink } from 'react-router-dom';
 import { getInitialState } from './data';
@@ -216,13 +216,7 @@ export default function App({ mode }: AppProps) {
         } else if (e.key === 'Delete') {
           const currentState = userStates[activeNodeId];
           if (currentState) {
-            setUserStates(prev => ({
-              ...prev,
-              [activeNodeId]: {
-                ...currentState,
-                isPruned: !currentState.isPruned
-              }
-            }));
+            handleUpdateNode(activeNodeId, { isPruned: !currentState.isPruned });
           }
         }
       }
@@ -310,7 +304,33 @@ export default function App({ mode }: AppProps) {
   }, [currentStepIndex, isStepMode, steps, treeData]);
 
   const handleUpdateNode = (id: string, partial: Partial<NodeState>) => {
-     setUserStates(prev => ({ ...prev, [id]: { ...prev[id], ...partial } }));
+     setUserStates(prev => {
+        const next = { ...prev };
+        
+        if ('isPruned' in partial) {
+           const newVal = partial.isPruned!;
+           
+           const findAndPrune = (node: TreeNodeData, targetId: string, forcePrune = false) => {
+              const isTarget = node.id === targetId;
+              const shouldPrune = forcePrune || isTarget;
+              
+              if (shouldPrune) {
+                 const current = next[node.id] || { v: '', alphas: [], betas: [], isPruned: false };
+                 next[node.id] = { ...current, isPruned: newVal };
+              }
+              
+              if (node.children) {
+                 node.children.forEach(child => findAndPrune(child, targetId, shouldPrune));
+              }
+           };
+           
+           findAndPrune(treeData, id);
+           return next;
+        }
+
+        const current = next[id] || { v: '', alphas: [], betas: [], isPruned: false };
+        return { ...next, [id]: { ...current, ...partial } };
+     });
      setShowResults(false);
   };
 
@@ -592,6 +612,46 @@ export default function App({ mode }: AppProps) {
                       )}
                    </AnimatePresence>
                  </button>
+              </div>
+           </div>
+        </div>
+
+        {/* Help Tooltip */}
+        <div className="mt-auto px-4 pb-2 relative group">
+           <div className="flex items-center gap-3 py-2 text-slate-400 hover:text-indigo-400 cursor-help transition-colors border-t border-[#1E293B]">
+              <HelpCircle size={18} />
+              {isLeftOpen && <span className="text-xs font-medium">Trợ giúp & Phím tắt</span>}
+           </div>
+           
+           <div className={`absolute bottom-full mb-2 w-64 bg-[#111827]/95 backdrop-blur-md border border-[#334155] rounded-xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform translate-y-2 group-hover:translate-y-0 ${isLeftOpen ? 'left-4' : 'left-10'}`}>
+              <h3 className="text-indigo-400 font-bold text-sm mb-3 border-b border-[#334155] pb-2 flex items-center gap-2">
+                 <HelpCircle size={14} /> Hướng dẫn & Phím tắt
+              </h3>
+              
+              <div className="space-y-4">
+                 <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Thao tác chuột</p>
+                    <ul className="text-[11px] space-y-1.5 text-slate-300">
+                       <li className="flex justify-between"><span>Di chuyển:</span> <span className="text-indigo-300">Chuột giữa / Space</span></li>
+                       <li className="flex justify-between"><span>Phóng to/thu nhỏ:</span> <span className="text-indigo-300">Cuộn chuột</span></li>
+                       <li className="flex justify-between"><span>Chọn Node:</span> <span className="text-indigo-300">Click chuột trái</span></li>
+                    </ul>
+                 </div>
+                 
+                 <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Phím tắt (Khi chọn Node)</p>
+                    <ul className="text-[11px] space-y-1.5 text-slate-300">
+                       <li className="flex justify-between"><kbd className="bg-[#1E293B] px-1 rounded border border-[#334155] text-emerald-400 font-mono">V</kbd> <span>Nhập giá trị v</span></li>
+                       <li className="flex justify-between"><kbd className="bg-[#1E293B] px-1 rounded border border-[#334155] text-emerald-400 font-mono">A</kbd> <span>Thêm Alpha (α)</span></li>
+                       <li className="flex justify-between"><kbd className="bg-[#1E293B] px-1 rounded border border-[#334155] text-rose-400 font-mono">B</kbd> <span>Thêm Beta (β)</span></li>
+                       <li className="flex justify-between"><kbd className="bg-[#1E293B] px-1 rounded border border-[#334155] text-rose-500 font-mono">Del</kbd> <span>Cắt tỉa nhánh</span></li>
+                       <li className="flex justify-between"><span>Di chuyển:</span> <span className="text-indigo-300">← ↑ ↓ →</span></li>
+                    </ul>
+                 </div>
+              </div>
+              
+              <div className="mt-4 pt-2 border-t border-[#334155] text-[10px] text-slate-500 italic leading-tight">
+                 Mẹo: Cắt tỉa nút cha sẽ tự động cắt toàn bộ các nhánh con!
               </div>
            </div>
         </div>

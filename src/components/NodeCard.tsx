@@ -45,18 +45,18 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
 
   const handleAddAlpha = (val: string) => {
     if(!val) return;
-    onUpdate({ alphas: [...state.alphas, val] });
+    onUpdate({ alphas: [...(state.alphas || []), val] });
   };
   const handleRemoveAlpha = () => {
-    onUpdate({ alphas: state.alphas.slice(0, -1) });
+    onUpdate({ alphas: (state.alphas || []).slice(0, -1) });
   };
 
   const handleAddBeta = (val: string) => {
     if(!val) return;
-    onUpdate({ betas: [...state.betas, val] });
+    onUpdate({ betas: [...(state.betas || []), val] });
   };
   const handleRemoveBeta = () => {
-    onUpdate({ betas: state.betas.slice(0, -1) });
+    onUpdate({ betas: (state.betas || []).slice(0, -1) });
   };
 
   // Validation
@@ -72,10 +72,10 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
          if (truth.v !== clean(state.v)) {
              errors.push(`v sai. ĐA: ${truth.v || 'rỗng'}`);
          }
-         if (truth.alphas!.join(',') !== state.alphas.map(clean).join(',')) {
+         if ((truth.alphas || []).join(',') !== (state.alphas || []).map(clean).join(',')) {
              errors.push(`α sai. ĐA: ${truth.alphas?.length ? truth.alphas.join('➔') : 'ø'}`);
          }
-         if (truth.betas!.join(',') !== state.betas.map(clean).join(',')) {
+         if ((truth.betas || []).join(',') !== (state.betas || []).map(clean).join(',')) {
              errors.push(`β sai. ĐA: ${truth.betas?.length ? truth.betas.join('➔') : 'ø'}`);
          }
      }
@@ -132,13 +132,13 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
                 <div className="flex items-center">
                    <span className="font-bold text-slate-400 w-4 text-[10px]">α:</span>
                    <div className="flex flex-wrap gap-1 flex-1 items-center min-h-[18px]">
-                      {state.alphas.length === 0 && <span className="text-slate-600 text-[9px] italic">ø</span>}
-                      {state.alphas.map((a, i) => (
-                         <span key={i} className={`text-[10px] ${i < state.alphas.length - 1 ? 'line-through text-slate-500' : 'font-bold text-emerald-400'}`}>{a}</span>
+                      {(state.alphas || []).length === 0 && <span className="text-slate-600 text-[9px] italic">ø</span>}
+                      {(state.alphas || []).map((a, i) => (
+                         <span key={i} className={`text-[10px] ${i < (state.alphas || []).length - 1 ? 'line-through text-slate-500' : 'font-bold text-emerald-400'}`}>{a}</span>
                       ))}
                    </div>
                 </div>
-                <InputActionBar inputRef={alphaRef} onAdd={handleAddAlpha} onRemove={handleRemoveAlpha} disabled={state.isPruned || showResults || isStepMode} hasItems={state.alphas.length > 0} />
+                <InputActionBar inputRef={alphaRef} onAdd={handleAddAlpha} onRemove={handleRemoveAlpha} disabled={state.isPruned || showResults || isStepMode} hasItems={(state.alphas || []).length > 0} />
              </div>
 
              {/* Beta */}
@@ -146,13 +146,13 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
                 <div className="flex items-center">
                    <span className="font-bold text-slate-400 w-4 text-[10px]">β:</span>
                    <div className="flex flex-wrap gap-1 flex-1 items-center min-h-[18px]">
-                      {state.betas.length === 0 && <span className="text-slate-600 text-[9px] italic">ø</span>}
-                      {state.betas.map((b, i) => (
-                         <span key={i} className={`text-[10px] ${i < state.betas.length - 1 ? 'line-through text-slate-500' : 'font-bold text-rose-400'}`}>{b}</span>
+                      {(state.betas || []).length === 0 && <span className="text-slate-600 text-[9px] italic">ø</span>}
+                      {(state.betas || []).map((b, i) => (
+                         <span key={i} className={`text-[10px] ${i < (state.betas || []).length - 1 ? 'line-through text-slate-500' : 'font-bold text-rose-400'}`}>{b}</span>
                       ))}
                    </div>
                 </div>
-                <InputActionBar inputRef={betaRef} onAdd={handleAddBeta} onRemove={handleRemoveBeta} disabled={state.isPruned || showResults || isStepMode} hasItems={state.betas.length > 0} />
+                <InputActionBar inputRef={betaRef} onAdd={handleAddBeta} onRemove={handleRemoveBeta} disabled={state.isPruned || showResults || isStepMode} hasItems={(state.betas || []).length > 0} />
              </div>
           </div>
        </div>
