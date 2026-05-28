@@ -1,0 +1,6 @@
+{
+  "name": "Alpha-Beta Pruning Practice",
+  "description": "Interactive Alpha-Beta Pruning algorithm practice tool with a visualized Game Tree interface",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
