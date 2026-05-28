@@ -186,7 +186,10 @@ function InputActionBar({ onAdd, onRemove, disabled, hasItems, inputRef }: { onA
             onKeyDown={e => { 
                if(e.key === 'Enter') {
                   if (val) {
-                     onAdd(val); 
+                     let finalVal = val;
+                     if (val === '-') finalVal = '-∞';
+                     else if (val === '+') finalVal = '+∞';
+                     onAdd(finalVal); 
                      setVal('');
                   }
                   e.currentTarget.blur();
