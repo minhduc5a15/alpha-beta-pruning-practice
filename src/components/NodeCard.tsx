@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Scissors, Undo2, Check } from 'lucide-react';
 import { NodeState, TruthRecord } from '../types';
 
@@ -16,6 +16,33 @@ interface Props {
 
 export default function NodeCard({ id, type, state, truth, onUpdate, showResults, isActive, isStepMode, onClick }: Props) {
   if (!state) return null;
+  const vRef = useRef<HTMLInputElement>(null);
+  const alphaRef = useRef<HTMLInputElement>(null);
+  const betaRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isActive || isStepMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const key = e.key.toLowerCase();
+      if (key === 'a') {
+        e.preventDefault();
+        alphaRef.current?.focus();
+      } else if (key === 'b') {
+        e.preventDefault();
+        betaRef.current?.focus();
+      } else if (key === 'v') {
+        e.preventDefault();
+        vRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isActive, isStepMode]);
+
   const handleAddAlpha = (val: string) => {
     if(!val) return;
     onUpdate({ alphas: [...state.alphas, val] });
@@ -90,6 +117,7 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
              <div className="flex items-center gap-1.5">
                 <span className="font-bold text-slate-400 w-3 text-[10px]">v:</span>
                 <input 
+                   ref={vRef}
                    disabled={state.isPruned || showResults || isStepMode}
                    value={state.v} 
                    onChange={e => onUpdate({ v: e.target.value })}
@@ -109,7 +137,7 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
                       ))}
                    </div>
                 </div>
-                <InputActionBar onAdd={handleAddAlpha} onRemove={handleRemoveAlpha} disabled={state.isPruned || showResults || isStepMode} hasItems={state.alphas.length > 0} />
+                <InputActionBar inputRef={alphaRef} onAdd={handleAddAlpha} onRemove={handleRemoveAlpha} disabled={state.isPruned || showResults || isStepMode} hasItems={state.alphas.length > 0} />
              </div>
 
              {/* Beta */}
@@ -123,7 +151,7 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
                       ))}
                    </div>
                 </div>
-                <InputActionBar onAdd={handleAddBeta} onRemove={handleRemoveBeta} disabled={state.isPruned || showResults || isStepMode} hasItems={state.betas.length > 0} />
+                <InputActionBar inputRef={betaRef} onAdd={handleAddBeta} onRemove={handleRemoveBeta} disabled={state.isPruned || showResults || isStepMode} hasItems={state.betas.length > 0} />
              </div>
           </div>
        </div>
@@ -147,11 +175,12 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
   );
 }
 
-function InputActionBar({ onAdd, onRemove, disabled, hasItems }: { onAdd:(v:string)=>void, onRemove:()=>void, disabled:boolean, hasItems:boolean }) {
+function InputActionBar({ onAdd, onRemove, disabled, hasItems, inputRef }: { onAdd:(v:string)=>void, onRemove:()=>void, disabled:boolean, hasItems:boolean, inputRef?: React.RefObject<HTMLInputElement | null> }) {
    const [val, setVal] = useState('');
    return (
       <div className="flex items-stretch gap-1 mt-0.5">
          <input 
+            ref={inputRef}
             value={val} onChange={e=>setVal(e.target.value)} 
             onKeyDown={e => { if(e.key === 'Enter' && val) { onAdd(val); setVal(''); } }}
             disabled={disabled}

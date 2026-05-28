@@ -49,6 +49,30 @@ export default function App({ mode }: AppProps) {
 
   const isEditorMode = mode === 'editor';
 
+  const { nodeIds, parentMap, firstChildMap, nextSiblingMap, prevSiblingMap } = React.useMemo(() => {
+    const ids: string[] = [];
+    const pMap: Record<string, string> = {};
+    const fcMap: Record<string, string> = {};
+    const nsMap: Record<string, string> = {};
+    const psMap: Record<string, string> = {};
+    
+    const traverse = (n: TreeNodeData, parentId?: string) => {
+      ids.push(n.id);
+      if (parentId) pMap[n.id] = parentId;
+      if (n.children && n.children.length > 0) {
+        fcMap[n.id] = n.children[0].id;
+        for (let i = 0; i < n.children.length; i++) {
+          const current = n.children[i];
+          if (i > 0) psMap[current.id] = n.children[i - 1].id;
+          if (i < n.children.length - 1) nsMap[current.id] = n.children[i + 1].id;
+          traverse(current, n.id);
+        }
+      }
+    };
+    traverse(treeData);
+    return { nodeIds: ids, parentMap: pMap, firstChildMap: fcMap, nextSiblingMap: nsMap, prevSiblingMap: psMap };
+  }, [treeData]);
+
   useEffect(() => {
     setInputText(JSON.stringify(treeData, null, 2));
   }, [treeData]);
@@ -108,19 +132,46 @@ export default function App({ mode }: AppProps) {
   };
 
   useEffect(() => {
-    if (!isStepMode) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
-        setCurrentStepIndex(prev => Math.min(steps.length, prev + 1));
-      } else if (e.key === 'ArrowLeft') {
-        setCurrentStepIndex(prev => Math.max(0, prev - 1));
+      if (isStepMode) {
+        if (e.key === 'ArrowRight') {
+          setCurrentStepIndex(prev => Math.min(steps.length, prev + 1));
+        } else if (e.key === 'ArrowLeft') {
+          setCurrentStepIndex(prev => Math.max(0, prev - 1));
+        }
+        return;
+      }
+
+      // Practice mode navigation
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const keys = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'];
+      if (keys.includes(e.key)) {
+        e.preventDefault();
+        if (!activeNodeId) {
+          setActiveNodeId(nodeIds[0]);
+          return;
+        }
+
+        if (e.key === 'ArrowRight') {
+          const nextId = nextSiblingMap[activeNodeId];
+          if (nextId) setActiveNodeId(nextId);
+        } else if (e.key === 'ArrowLeft') {
+          const prevId = prevSiblingMap[activeNodeId];
+          if (prevId) setActiveNodeId(prevId);
+        } else if (e.key === 'ArrowUp') {
+          const parentId = parentMap[activeNodeId];
+          if (parentId) setActiveNodeId(parentId);
+        } else if (e.key === 'ArrowDown') {
+          const childId = firstChildMap[activeNodeId];
+          if (childId) setActiveNodeId(childId);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isStepMode, steps.length]);
+  }, [isStepMode, steps.length, activeNodeId, nodeIds, parentMap, firstChildMap, nextSiblingMap, prevSiblingMap]);
 
   useEffect(() => {
     if (!isStepMode) return;
@@ -245,7 +296,7 @@ export default function App({ mode }: AppProps) {
   const handleNodeClick = (e: React.MouseEvent, id: string) => {
      e.stopPropagation();
      if (!isStepMode) {
-        setActiveNodeId(id === activeNodeId ? null : id);
+        setActiveNodeId(id);
      }
   };
 
