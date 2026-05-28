@@ -193,7 +193,9 @@ function InputActionBar({ onAdd, onRemove, disabled, hasItems, inputRef }: { onA
                      setVal('');
                   }
                   e.currentTarget.blur();
-               } 
+               } else if (e.key === 'Delete') {
+                  onRemove();
+               }
             }}
             disabled={disabled}
             className="w-8 border-b border-slate-600 px-0.5 text-[10px] text-center focus:border-emerald-500 outline-none disabled:opacity-50 bg-transparent text-slate-300 font-mono"
