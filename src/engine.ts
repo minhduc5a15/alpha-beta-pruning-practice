@@ -1,4 +1,4 @@
-import { TreeNodeData } from './types';
+import { TreeNodeData, TruthRecord } from './types';
 import { TREE_DATA } from './data';
 
 export type StepAction = 
