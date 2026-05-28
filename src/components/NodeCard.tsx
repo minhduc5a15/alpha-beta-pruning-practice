@@ -11,9 +11,10 @@ interface Props {
   showResults: boolean;
   isActive?: boolean;
   isStepMode?: boolean;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
-export default function NodeCard({ id, type, state, truth, onUpdate, showResults, isActive, isStepMode }: Props) {
+export default function NodeCard({ id, type, state, truth, onUpdate, showResults, isActive, isStepMode, onClick }: Props) {
   if (!state) return null;
   const handleAddAlpha = (val: string) => {
     if(!val) return;
@@ -59,7 +60,7 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
   return (
     <div className="relative w-[150px]">
        <button 
-          onClick={() => onUpdate({ isPruned: !state.isPruned })}
+          onClick={(e) => { e.stopPropagation(); onUpdate({ isPruned: !state.isPruned }); }}
           disabled={isStepMode}
           className={`absolute -top-2.5 -right-2.5 z-20 p-1.5 rounded-full shadow-lg border transition-all ${
             state.isPruned ? 'bg-rose-500 text-white border-rose-600 outline outline-2 outline-[#0F1115]' : 'bg-[#1E293B] text-slate-400 hover:text-rose-400 border-[#334155]'
@@ -69,11 +70,14 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
           <Scissors size={12} />
        </button>
 
-       <div id={`node-${id}`} className={`bg-[#111827] rounded-lg border shadow-xl transition-all duration-300 flex flex-col overflow-hidden backdrop-blur-sm ${
+       <div 
+         id={`node-${id}`} 
+         onClick={onClick}
+         className={`bg-[#111827] rounded-lg border shadow-xl transition-all duration-300 flex flex-col overflow-hidden backdrop-blur-sm ${
           isActive ? 'ring-2 ring-indigo-500/50 scale-105 z-30 transform-gpu' : ''
        } ${
           state.isPruned ? 'opacity-40 grayscale' : ''
-       } ${isCorrect ? 'border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : isWrong ? 'border-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.2)]' : isActive ? 'border-indigo-400' : 'border-[#334155]'}`}>
+       } ${isCorrect ? 'border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : isWrong ? 'border-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.2)]' : isActive ? 'border-indigo-400' : 'border-[#334155]'} ${!isStepMode ? 'cursor-pointer hover:border-slate-500' : ''}`}>
           <div className={`w-full flex items-center justify-center py-1 font-bold border-b text-xs ${
              type === 'MAX' ? isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-[#1E293B] text-emerald-400 border-emerald-500/30' : isActive ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-[#1E293B] text-rose-400 border-rose-500/30'
           }`}>

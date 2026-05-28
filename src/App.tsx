@@ -242,6 +242,19 @@ export default function App({ mode }: AppProps) {
      };
   }, [userStates, showResults, treeData, isEditorMode]);
 
+  const handleNodeClick = (e: React.MouseEvent, id: string) => {
+     e.stopPropagation();
+     if (!isStepMode) {
+        setActiveNodeId(id === activeNodeId ? null : id);
+     }
+  };
+
+  const handleContainerClick = () => {
+     if (!isStepMode) {
+        setActiveNodeId(null);
+     }
+  };
+
   const renderTree = (node: TreeNodeData) => {
      return (
         <div key={node.id} className="flex flex-col items-center gap-8 relative w-fit">
@@ -257,6 +270,7 @@ export default function App({ mode }: AppProps) {
                  showResults={showResults}
                  isActive={activeNodeId === node.id}
                  isStepMode={isStepMode}
+                 onClick={!isStepMode ? (e) => handleNodeClick(e, node.id) : undefined}
               />
            ) : (
               <NodeCard 
@@ -268,6 +282,7 @@ export default function App({ mode }: AppProps) {
                  showResults={showResults}
                  isActive={activeNodeId === node.id}
                  isStepMode={isStepMode}
+                 onClick={!isStepMode ? (e) => handleNodeClick(e, node.id) : undefined}
               />
            )}
            {node.children && node.children.length > 0 && (
@@ -282,7 +297,7 @@ export default function App({ mode }: AppProps) {
   if(!userStates || Object.keys(userStates).length === 0) return <div>Loading...</div>;
 
   return (
-    <div className="flex flex-col h-screen bg-[#0F1115] text-[#E2E8F0] font-sans overflow-hidden select-none">
+    <div className="flex flex-col h-screen bg-[#0F1115] text-[#E2E8F0] font-sans overflow-hidden select-none" onClick={handleContainerClick}>
       <header className="p-3 border-b border-[#1E293B] bg-[#111827] flex justify-between items-center z-20 shrink-0">
          <div className="flex items-center gap-4">
             <div className="mr-2">
