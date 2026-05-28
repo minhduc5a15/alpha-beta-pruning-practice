@@ -121,6 +121,7 @@ export default function NodeCard({ id, type, state, truth, onUpdate, showResults
                    disabled={state.isPruned || showResults || isStepMode}
                    value={state.v} 
                    onChange={e => onUpdate({ v: e.target.value })}
+                   onKeyDown={e => { if(e.key === 'Enter') e.currentTarget.blur(); }}
                    className="flex-1 min-w-0 border-b border-slate-600 px-1 py-0 text-xs font-semibold focus:border-emerald-500 outline-none disabled:opacity-50 bg-transparent text-center"
                    placeholder="?"
                 />
@@ -182,7 +183,15 @@ function InputActionBar({ onAdd, onRemove, disabled, hasItems, inputRef }: { onA
          <input 
             ref={inputRef}
             value={val} onChange={e=>setVal(e.target.value)} 
-            onKeyDown={e => { if(e.key === 'Enter' && val) { onAdd(val); setVal(''); } }}
+            onKeyDown={e => { 
+               if(e.key === 'Enter') {
+                  if (val) {
+                     onAdd(val); 
+                     setVal('');
+                  }
+                  e.currentTarget.blur();
+               } 
+            }}
             disabled={disabled}
             className="w-8 border-b border-slate-600 px-0.5 text-[10px] text-center focus:border-emerald-500 outline-none disabled:opacity-50 bg-transparent text-slate-300 font-mono"
             placeholder="..."
